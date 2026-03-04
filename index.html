@@ -593,8 +593,9 @@
       <div class="live-dot"></div>
       LIVE
     </div>
-    <div class="last-updated" id="lastUpdated">Loading...</div>
-    <button class="refresh-btn" onclick="loadData()">↺ REFRESH</button>
+    <div class="last-updated" id="liveClock">--:--:-- IST</div>
+    <div class="last-updated" id="lastUpdated" style="font-size:10px;opacity:0.6;">Loading...</div>
+    <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">↺ REFRESH</button>
   </div>
 </div>
 
@@ -675,7 +676,8 @@
 
   function renderAll(d) {
     document.getElementById('lastUpdated').textContent = 
-      '⏱ ' + new Date(d.last_updated).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata'});
+      const ts = d.last_updated.includes('+') || d.last_updated.endsWith('Z') ? d.last_updated : d.last_updated + 'Z';
+      '⏱ Updated: ' + new Date(ts).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata'}) + ' IST';
     
     renderSummary(d);
     renderSignals(d.signals || []);
@@ -855,6 +857,27 @@
     
     renderAll(demoData);
     document.getElementById('lastUpdated').textContent = '⚠️ DEMO MODE — Connect backend for live data';
+  }
+
+  // Live IST clock — updates every second
+  function updateClock() {
+    const now = new Date();
+    const istTime = now.toLocaleTimeString('en-IN', {timeZone: 'Asia/Kolkata', hour12: true});
+    document.getElementById('liveClock').textContent = istTime + ' IST';
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Refresh button with loading state
+  async function refreshData() {
+    const btn = document.getElementById('refreshBtn');
+    btn.textContent = '⟳ Loading...';
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    await loadData();
+    btn.textContent = '↺ REFRESH';
+    btn.disabled = false;
+    btn.style.opacity = '1';
   }
 
   // Auto refresh every 5 minutes
