@@ -675,9 +675,8 @@
   }
 
   function renderAll(d) {
-    document.getElementById('lastUpdated').textContent = 
-      const ts = d.last_updated.includes('+') || d.last_updated.endsWith('Z') ? d.last_updated : d.last_updated + 'Z';
-      '⏱ Updated: ' + new Date(ts).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata'}) + ' IST';
+    const ts = d.last_updated.includes('+') || d.last_updated.endsWith('Z') ? d.last_updated : d.last_updated + 'Z';
+    document.getElementById('lastUpdated').textContent = '⏱ ' + new Date(ts).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata'}) + ' IST';
     
     renderSummary(d);
     renderSignals(d.signals || []);
@@ -859,11 +858,10 @@
     document.getElementById('lastUpdated').textContent = '⚠️ DEMO MODE — Connect backend for live data';
   }
 
-  // Live IST clock — updates every second
+  // Live IST clock — ticks every second
   function updateClock() {
-    const now = new Date();
-    const istTime = now.toLocaleTimeString('en-IN', {timeZone: 'Asia/Kolkata', hour12: true});
-    document.getElementById('liveClock').textContent = istTime + ' IST';
+    document.getElementById('liveClock').textContent =
+      new Date().toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata', hour12:true}) + ' IST';
   }
   updateClock();
   setInterval(updateClock, 1000);
