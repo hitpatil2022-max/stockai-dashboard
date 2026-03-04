@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Stock AI — Intelligence Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a0f;
+    --bg2: #0c1117;
+    --bg3: #111820;
+    --border: #1a2535;
+    --border2: #243040;
+    --accent: #f59e0b;
+    --accent2: #fbbf24;
+    --green: #10b981;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #4a5568;
+    --glow: rgba(245, 158, 11, 0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--bg);
+    font-weight: 800;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 var(--glow); }
+    50% { box-shadow: 0 0 20px 5px var(--glow); }
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 1px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .last-updated {
+    color: var(--text3);
+    font-size: 11px;
+  }
+
+  /* Market ticker bar */
+  .ticker-bar {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    height: 36px;
+    display: flex;
+    align-items: center;
+  }
+
+  .ticker-scroll {
+    display: flex;
+    gap: 40px;
+    animation: scroll-left 40s linear infinite;
+    white-space: nowrap;
+    padding: 0 20px;
+  }
+
+  .ticker-scroll:hover { animation-play-state: paused; }
+
+  @keyframes scroll-left {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .ticker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .ticker-sym { color: var(--accent); font-weight: 500; }
+  .ticker-price { color: var(--text); }
+  .ticker-chg.up { color: var(--green); }
+  .ticker-chg.down { color: var(--red); }
+
+  /* Main layout */
+  .container {
+    display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    grid-template-rows: auto 1fr;
+    gap: 1px;
+    background: var(--border);
+    min-height: calc(100vh - 109px);
+  }
+
+  .panel {
+    background: var(--bg);
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Market summary cards */
+  .summary-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    grid-column: 1 / -1;
+  }
+
+  .summary-card {
+    background: var(--bg2);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .summary-card.bullish::before { background: var(--green); }
+  .summary-card.bearish::before { background: var(--red); }
+  .summary-card.neutral::before { background: var(--accent); }
+
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+
+  .card-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .card-value.up { color: var(--green); }
+  .card-value.down { color: var(--red); }
+  .card-value.accent { color: var(--accent); }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+
+  /* Signal list */
+  .signal-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .signal-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .signal-card:hover {
+    border-color: var(--border2);
+    background: var(--bg3);
+    transform: translateX(2px);
+  }
+
+  .signal-card.strong {
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+
+  .signal-card.strong::before {
+    content: 'STRONG';
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .signal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .signal-sym {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .signal-action {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 3px;
+  }
+
+  .signal-action.BUY { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .signal-action.SELL { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+  .signal-action.HOLD { background: rgba(245,158,11,0.15); color: var(--accent); border: 1px solid rgba(245,158,11,0.3); }
+  .signal-action.WATCH { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+
+  .signal-price { color: var(--text); font-size: 13px; }
+  .signal-chg { font-size: 12px; }
+  .signal-chg.up { color: var(--green); }
+  .signal-chg.down { color: var(--red); }
+
+  .confidence-bar {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 8px 0;
+    overflow: hidden;
+  }
+
+  .confidence-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .confidence-fill.high { background: var(--green); }
+  .confidence-fill.medium { background: var(--accent); }
+  .confidence-fill.low { background: var(--red); }
+
+  .signal-reason {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.5;
+    margin-top: 6px;
+  }
+
+  .signal-meta {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .meta-item {
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  .meta-item span { color: var(--text2); }
+
+  /* News panel */
+  .news-list { display: flex; flex-direction: column; gap: 1px; }
+
+  .news-item {
+    padding: 12px;
+    border-left: 2px solid transparent;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .news-item:hover { background: var(--bg2); border-left-color: var(--accent); }
+
+  .news-item.bullish { border-left-color: rgba(16,185,129,0.5); }
+  .news-item.bearish { border-left-color: rgba(239,68,68,0.5); }
+
+  .news-title {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+
+  .news-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .news-source {
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+
+  .news-time { font-size: 10px; color: var(--text3); }
+  .news-score {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 1px 6px;
+    background: var(--bg3);
+    border-radius: 3px;
+    color: var(--text3);
+  }
+
+  .news-stocks {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .news-tag {
+    font-size: 9px;
+    padding: 2px 5px;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.2);
+    color: var(--accent);
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Right panel - watchlist */
+  .watchlist { display: flex; flex-direction: column; gap: 1px; }
+
+  .watch-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--bg2);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    transition: all 0.2s;
+  }
+
+  .watch-item:hover { background: var(--bg3); }
+
+  .watch-sym {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    min-width: 80px;
+  }
+
+  .watch-price { font-size: 12px; text-align: right; }
+  .watch-chg { font-size: 11px; text-align: right; min-width: 60px; }
+
+  /* Tech indicators */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .tech-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+  }
+
+  .tech-label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .tech-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  /* Risk meter */
+  .risk-meter {
+    display: flex;
+    gap: 3px;
+    margin-top: 8px;
+  }
+
+  .risk-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background 0.3s;
+  }
+
+  /* Loading state */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text3);
+    gap: 12px;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+  }
+
+  .empty-icon { font-size: 32px; margin-bottom: 12px; }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .container { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .container { grid-template-columns: 1fr; }
+    .summary-cards { grid-template-columns: 1fr; }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .refresh-btn {
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.3);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    transition: all 0.2s;
+  }
+
+  .refresh-btn:hover {
+    background: rgba(245,158,11,0.2);
+  }
+
+  .section-divider {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    margin: 12px 0;
+  }
+
+  .risk-tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .risk-tag.LOW { background: rgba(16,185,129,0.15); color: var(--green); }
+  .risk-tag.MEDIUM { background: rgba(245,158,11,0.15); color: var(--accent); }
+  .risk-tag.HIGH { background: rgba(239,68,68,0.15); color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">₹</div>
+    <div>
+      <div class="logo-text">India Stock <span>AI</span></div>
+      <span class="logo-sub">Intelligence Terminal · NSE/BSE</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      LIVE
+    </div>
+    <div class="last-updated" id="lastUpdated">Loading...</div>
+    <button class="refresh-btn" onclick="loadData()">↺ REFRESH</button>
+  </div>
+</div>
+
+<!-- Ticker Bar -->
+<div class="ticker-bar">
+  <div class="ticker-scroll" id="tickerScroll">
+    <div class="ticker-item"><span class="ticker-sym">NIFTY50</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></div>
+    <div class="ticker-item"><span class="ticker-sym">SENSEX</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></div>
+    <div class="ticker-item"><span class="ticker-sym">USD/INR</span><span class="ticker-price">—</span><span class="ticker-chg">—</span></div>
+    <div class="ticker-item"><span class="ticker-sym">LOADING MARKET DATA...</span></div>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-cards" id="summaryCards">
+  <div class="summary-card neutral">
+    <div class="card-label">Market Sentiment</div>
+    <div class="card-value accent" id="mktSentiment">—</div>
+    <div class="card-sub" id="mktSummary">Loading analysis...</div>
+  </div>
+  <div class="summary-card">
+    <div class="card-label">Top Opportunity</div>
+    <div class="card-value accent" id="topOpp" style="font-size:18px">—</div>
+    <div class="card-sub" id="topOppSub">Scanning signals...</div>
+  </div>
+  <div class="summary-card">
+    <div class="card-label">Signals Found</div>
+    <div class="card-value accent" id="signalCount">—</div>
+    <div class="card-sub" id="strongCount">strong signals</div>
+  </div>
+</div>
+
+<!-- Main Grid -->
+<div class="container">
+
+  <!-- Left: News Panel -->
+  <div class="panel">
+    <div class="panel-title">📰 Market News</div>
+    <div class="news-list" id="newsList">
+      <div class="loading"><div class="spinner"></div>Fetching news...</div>
+    </div>
+  </div>
+
+  <!-- Center: Signals -->
+  <div class="panel">
+    <div class="panel-title">⚡ Trading Signals</div>
+    <div class="signal-list" id="signalList">
+      <div class="loading"><div class="spinner"></div>Generating signals...</div>
+    </div>
+  </div>
+
+  <!-- Right: Watchlist + Technical -->
+  <div class="panel">
+    <div class="panel-title">📊 Watchlist</div>
+    <div class="watchlist" id="watchlist">
+      <div class="loading"><div class="spinner"></div>Loading stocks...</div>
+    </div>
+    <div class="section-divider">⚠️ Risks To Watch</div>
+    <div id="risksList"></div>
+  </div>
+
+</div>
+
+<script>
+  let data = null;
+
+  // Load data from JSON file (generated by Python backend)
+  async function loadData() {
+    try {
+      const res = await fetch('web-production-2ae21.up.railway.app/data.json?t=' + Date.now());
+      data = await res.json();
+      renderAll(data);
+    } catch(e) {
+      // Show demo data if no backend connected yet
+      renderDemo();
+    }
+  }
+
+  function renderAll(d) {
+    document.getElementById('lastUpdated').textContent = 
+      '⏱ ' + new Date(d.last_updated).toLocaleTimeString('en-IN', {timeZone:'Asia/Kolkata'});
+    
+    renderSummary(d);
+    renderSignals(d.signals || []);
+    renderNews(d.top_news || []);
+    renderWatchlist(d.signals || []);
+    renderTicker(d.signals || []);
+  }
+
+  function renderSummary(d) {
+    const signals = d.signals || [];
+    const marketSig = signals.find(s => s.is_market_summary);
+    
+    if (marketSig) {
+      const el = document.getElementById('mktSentiment');
+      el.textContent = marketSig.action || 'NEUTRAL';
+      const colors = {BULLISH:'up', BEARISH:'down', NEUTRAL:'accent'};
+      el.className = 'card-value ' + (colors[marketSig.action] || 'accent');
+      document.getElementById('mktSummary').textContent = marketSig.reason || '';
+      document.getElementById('topOpp').textContent = marketSig.top_opportunity?.split(' ')[0] || '—';
+      document.getElementById('topOppSub').textContent = marketSig.top_opportunity || '—';
+      
+      // Risks
+      const risksEl = document.getElementById('risksList');
+      risksEl.innerHTML = (marketSig.risks || []).map(r => 
+        `<div style="padding:8px;font-size:11px;color:#94a3b8;border-left:2px solid #ef4444;padding-left:10px;margin-bottom:6px">⚠️ ${r}</div>`
+      ).join('');
+    }
+    
+    const stockSigs = signals.filter(s => !s.is_market_summary);
+    document.getElementById('signalCount').textContent = stockSigs.length;
+    const strong = stockSigs.filter(s => s.is_strong).length;
+    document.getElementById('strongCount').textContent = `${strong} strong signals (75%+ confidence)`;
+  }
+
+  function renderSignals(signals) {
+    const stockSigs = signals.filter(s => !s.is_market_summary);
+    const el = document.getElementById('signalList');
+    
+    if (!stockSigs.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📡</div>No signals yet. Backend not connected.<br><small style="font-size:10px;color:#4a5568;margin-top:8px;display:block">Run the Python backend to start receiving signals.</small></div>';
+      return;
+    }
+    
+    el.innerHTML = stockSigs.map(s => {
+      const confLevel = s.confidence >= 75 ? 'high' : s.confidence >= 55 ? 'medium' : 'low';
+      const chgClass = (s.change_pct || 0) >= 0 ? 'up' : 'down';
+      const chgSign = (s.change_pct || 0) >= 0 ? '+' : '';
+      
+      return `
+        <div class="signal-card ${s.is_strong ? 'strong' : ''}">
+          <div class="signal-header">
+            <div>
+              <div class="signal-sym">${s.symbol}</div>
+              <div class="signal-price">₹${s.current_price || '—'} <span class="signal-chg ${chgClass}">${chgSign}${s.change_pct || 0}%</span></div>
+            </div>
+            <div style="text-align:right">
+              <div class="signal-action ${s.action}">${s.action}</div>
+              <div style="font-size:10px;color:#94a3b8;margin-top:4px">${s.confidence}% conf.</div>
+            </div>
+          </div>
+          <div class="confidence-bar">
+            <div class="confidence-fill ${confLevel}" style="width:${s.confidence}%"></div>
+          </div>
+          <div class="signal-reason">${s.reason || ''}</div>
+          <div class="signal-meta">
+            <div class="meta-item">🎯 <span>₹${s.target_price || '—'}</span></div>
+            <div class="meta-item">🛑 <span>₹${s.stop_loss || '—'}</span></div>
+            <div class="meta-item">⏱ <span>${s.time_horizon || '—'}</span></div>
+            <div class="risk-tag ${s.risk_level || 'MEDIUM'}">${s.risk_level || 'MEDIUM'}</div>
+          </div>
+          ${s.impact_factors?.length ? 
+            `<div class="news-stocks">${s.impact_factors.slice(0,3).map(f => `<span class="news-tag">${f}</span>`).join('')}</div>`
+            : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderNews(news) {
+    const el = document.getElementById('newsList');
+    
+    if (!news.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📰</div>No news data</div>';
+      return;
+    }
+    
+    el.innerHTML = news.map(n => {
+      const sentClass = n.sentiment === 'positive' ? 'bullish' : n.sentiment === 'negative' ? 'bearish' : '';
+      return `
+        <div class="news-item ${sentClass}" onclick="window.open('${n.link}','_blank')">
+          <div class="news-title">${n.title}</div>
+          <div class="news-meta">
+            <span class="news-source">${(n.source || '').substring(0,25)}</span>
+            <span class="news-score">⭐ ${n.importance_score || 5}/10</span>
+          </div>
+          ${n.mentioned_stocks?.length ? 
+            `<div class="news-stocks">${n.mentioned_stocks.slice(0,4).map(s => `<span class="news-tag">${s}</span>`).join('')}</div>`
+            : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderWatchlist(signals) {
+    const el = document.getElementById('watchlist');
+    const stocks = signals.filter(s => !s.is_market_summary && s.current_price);
+    
+    if (!stocks.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div>No stock data</div>';
+      return;
+    }
+    
+    el.innerHTML = stocks.slice(0, 20).map(s => {
+      const chgClass = (s.change_pct || 0) >= 0 ? 'up' : 'down';
+      const chgSign = (s.change_pct || 0) >= 0 ? '▲' : '▼';
+      return `
+        <div class="watch-item">
+          <div>
+            <div class="watch-sym">${s.symbol}</div>
+            <div style="font-size:10px;color:#4a5568">${s.action}</div>
+          </div>
+          <div>
+            <div class="watch-price">₹${s.current_price}</div>
+            <div class="watch-chg ${chgClass}" style="text-align:right">${chgSign} ${Math.abs(s.change_pct || 0)}%</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderTicker(signals) {
+    const stocks = signals.filter(s => !s.is_market_summary && s.current_price);
+    if (!stocks.length) return;
+    
+    const items = stocks.map(s => {
+      const chgSign = (s.change_pct || 0) >= 0 ? '+' : '';
+      const chgClass = (s.change_pct || 0) >= 0 ? 'up' : 'down';
+      return `<div class="ticker-item">
+        <span class="ticker-sym">${s.symbol}</span>
+        <span class="ticker-price">₹${s.current_price}</span>
+        <span class="ticker-chg ${chgClass}">${chgSign}${s.change_pct || 0}%</span>
+      </div>`;
+    }).join('');
+    
+    // Duplicate for seamless scroll
+    document.getElementById('tickerScroll').innerHTML = items + items;
+  }
+
+  function renderDemo() {
+    // Demo mode - shows what the dashboard will look like
+    const demoData = {
+      last_updated: new Date().toISOString(),
+      signals: [
+        {
+          is_market_summary: true,
+          action: "BULLISH",
+          reason: "RBI policy stable, IT sector earnings strong. FII buying continues.",
+          top_opportunity: "TCS — Strong Q4 guidance + AI deal pipeline",
+          risks: ["Global recession fears", "Crude oil price spike", "INR depreciation pressure"]
+        },
+        { symbol: "TCS", current_price: 3842, change_pct: 1.8, action: "BUY", confidence: 87, time_horizon: "swing", target_price: 4050, stop_loss: 3750, risk_level: "LOW", reason: "Q4 results beat expectations. AI consulting pipeline expanding rapidly.", impact_factors: ["Q4 beat", "AI deals", "FII buying"], is_strong: true },
+        { symbol: "RELIANCE", current_price: 2715, change_pct: 0.9, action: "BUY", confidence: 79, time_horizon: "short-term", target_price: 2900, stop_loss: 2650, risk_level: "MEDIUM", reason: "Retail expansion + Jio subscriber growth driving valuation re-rating.", impact_factors: ["Retail growth", "Jio 5G"], is_strong: true },
+        { symbol: "HDFCBANK", current_price: 1567, change_pct: -0.4, action: "HOLD", confidence: 61, time_horizon: "swing", target_price: 1650, stop_loss: 1520, risk_level: "LOW", reason: "NIM pressure in near term. Wait for clearer direction post Q4.", impact_factors: ["NIM pressure", "Credit cost"], is_strong: false },
+        { symbol: "INFY", current_price: 1423, change_pct: 2.1, action: "BUY", confidence: 83, time_horizon: "swing", target_price: 1550, stop_loss: 1380, risk_level: "LOW", reason: "Deal wins accelerating. Margin recovery story intact.", impact_factors: ["Deal wins", "Margin recovery"], is_strong: true },
+        { symbol: "TATAMOTORS", current_price: 967, change_pct: -1.2, action: "WATCH", confidence: 55, time_horizon: "intraday", target_price: 1020, stop_loss: 940, risk_level: "HIGH", reason: "JLR demand concerns + China EV competition. High risk, high reward.", impact_factors: ["JLR demand", "China competition"], is_strong: false },
+      ],
+      top_news: [
+        { title: "TCS Q4 results: Net profit rises 9% YoY, beats estimates", source: "Economic Times", link: "#", importance_score: 9.5, mentioned_stocks: ["TCS"], sentiment: "positive" },
+        { title: "Reliance Jio adds 5.2 million subscribers in March", source: "Business Standard", link: "#", importance_score: 8.2, mentioned_stocks: ["RELIANCE"], sentiment: "positive" },
+        { title: "RBI holds repo rate at 6.5%, maintains accommodative stance", source: "Mint", link: "#", importance_score: 9.0, mentioned_stocks: [], sentiment: "neutral" },
+        { title: "Infosys wins $1.5 billion deal with European bank", source: "Moneycontrol", link: "#", importance_score: 8.8, mentioned_stocks: ["INFY"], sentiment: "positive" },
+        { title: "HDFC Bank faces NIM pressure amid rate cycle uncertainty", source: "Financial Express", link: "#", importance_score: 7.5, mentioned_stocks: ["HDFCBANK"], sentiment: "negative" },
+      ],
+      news_count: 5,
+      stocks_analyzed: 5
+    };
+    
+    renderAll(demoData);
+    document.getElementById('lastUpdated').textContent = '⚠️ DEMO MODE — Connect backend for live data';
+  }
+
+  // Auto refresh every 5 minutes
+  setInterval(loadData, 5 * 60 * 1000);
+
+  // Initial load
+  loadData();
+</script>
+</body>
+</html>
